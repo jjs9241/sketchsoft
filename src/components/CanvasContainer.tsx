@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { useRef, useEffect } from "react"
-import { addBox, addSphere, initRenderer } from "../module/renderer.module"
+import { addBox, addRandomSphere, initRenderer } from "../module/renderer.module"
 
 const CanvasContainer = () => {
 	console.log('CanvasContainer')
@@ -12,9 +12,9 @@ const CanvasContainer = () => {
 	useEffect(() => {
 		setTimeout(() => {
 			rendererRef.current!.appendChild(renderer.domElement)
-			addSphere(scene)
+			addRandomSphere(scene)
 		}, 0)
-	},[])
+	}, [])
 
 	return (
 		<div ref={rendererRef}></div>
