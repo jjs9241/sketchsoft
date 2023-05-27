@@ -1,7 +1,10 @@
+import CanvasContainer from "./CanvasContainer"
+import '../styles/components/RandomSphereViewer.css'
+
 const RandomSphereViewer = () => {
 	console.log('RandomSphereViewer')
 	return (
-		<div></div>
+		<div className="RandomSphereViewer"><CanvasContainer></CanvasContainer></div>
 	)
 }
 
