@@ -1,9 +1,15 @@
 .RandomSphereViewer {
   background-color: #FFFFFF;
-  min-height: 100vh;
+  width: 500px;
+	height: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
+	border-radius: 10px;
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin: 10px auto;
 }
