@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { getRandomNumber } from './calculator.module';
+import { Sphere } from '../types/geometry';
 
 export const initRenderer = () => {
-	const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 300, 400 );
+	console.log('initRenderer')
+	const camera = new THREE.PerspectiveCamera( 35, 1, 200, 500 );
 	camera.position.z = 400;
 	camera.lookAt(0,0,0)
 
@@ -10,7 +12,7 @@ export const initRenderer = () => {
 
 	const renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setClearColor( 0xffffff, 0);
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	//renderer.setSize( window.innerWidth, window.innerHeight );
 
 	function animation( time: number ) {
 
@@ -37,9 +39,9 @@ export const addSphere = (scene: THREE.Scene) => {
 	scene.add( sphere );
 }
 
-export const addRandomSphere = (scene: THREE.Scene) => {
+export const addRandomSphere = (scene: THREE.Scene, addSphere: (sphere0: Sphere) => void) => {
 	const radius = getRandomNumber(10, 30)
-	const [ x, y, z ] = [1, 1, 1].map(one => getRandomNumber(-50, 50))
+	const [ x, y, z ] = [1, 1, 1].map(_ => getRandomNumber(-100, 100))
 	
 	const geometry = new THREE.SphereGeometry( radius, 32, 16 ); 
 	const material = new THREE.MeshPhongMaterial( { color: Math.round(Math.random() * 0xffffff) } ); 
@@ -48,6 +50,11 @@ export const addRandomSphere = (scene: THREE.Scene) => {
 	sphere.position.set(x, y, z)
 	
 	scene.add( sphere );
+	addSphere({
+		key: (new Date()).getTime().toString(),
+		position: [x, y, z],
+		radius: radius
+	})
 }
 
 export const addSpotLight = (scene: THREE.Scene) => {
@@ -60,7 +67,7 @@ export const addSpotLight = (scene: THREE.Scene) => {
 export const addDirectionalLight = (scene: THREE.Scene) => {
 	const intensity = 12;
 	const light = new THREE.DirectionalLight( 0xffffff, intensity);
-	light.position.set(-100, 100, 100 );
+	light.position.set(-200, 200, 200 );
 	scene.add(light)
 }
 
