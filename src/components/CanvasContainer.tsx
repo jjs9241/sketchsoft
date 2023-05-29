@@ -42,7 +42,12 @@ const CanvasContainer = () => {
 			pickerRef.current?.rayCaster.setFromCamera( pickerRef.current.mouse, rendererState.camera )
 			const intersection = instancedSphereStateRef.current?.instancedSphere === undefined ? undefined : pickerRef.current?.rayCaster.intersectObject( instancedSphereStateRef.current.instancedSphere )
 
-			console.log('intersection:::', intersection?.length, pickerRef.current?.mouse, rendererState.camera)
+			//console.log('intersection:::', intersection?.length, pickerRef.current?.mouse, rendererState.camera)
+			if ( intersection !== undefined && intersection.length > 0) {
+				if(pickerRef.current !== null) pickerRef.current.pickedId = intersection[ 0 ].instanceId
+			} else {
+				if(pickerRef.current !== null) pickerRef.current.pickedId = undefined
+			}
 
 			rendererState.renderer.render(rendererState.scene, rendererState.camera)
 		}
@@ -92,7 +97,9 @@ const CanvasContainer = () => {
 
 				pickerRef.current = {
 					rayCaster: new THREE.Raycaster(),
-					mouse: new THREE.Vector2( 1, 1 )
+					mouse: new THREE.Vector2( 1, 1 ),
+					pickedId: undefined,
+					selectedId: undefined
 				}
 
 				canvasContainerRef.current?.addEventListener('mousemove', ( event ) =>  {
@@ -106,6 +113,32 @@ const CanvasContainer = () => {
 						pickerRef.current.mouse.y = ((rect.bottom - event.clientY) / rect.height ) * 2 - 1
 					}
 			
+				})
+
+				canvasContainerRef.current?.addEventListener('click', ( event ) =>  {
+
+					event.preventDefault();
+			
+					if(pickerRef.current === null || pickerRef.current.pickedId === undefined) return;
+					if(pickerRef.current.selectedId !== undefined && sphereContextRef.current !== null){
+						if(pickerRef.current.pickedId === pickerRef.current.selectedId){
+							console.log('delete')
+						}
+						else {
+							console.log('deselect')
+							const beforeSelected = sphereContextRef.current.find(sphere => sphere.index === pickerRef.current?.selectedId)
+							if(beforeSelected && beforeSelected.index) instancedSphereStateRef.current?.instancedSphere.setColorAt( beforeSelected.index, new THREE.Color(beforeSelected.color) );
+							pickerRef.current.selectedId = undefined
+							if(pickerRef.current.pickedId !== undefined) {
+								console.log('select')
+							}
+						}
+					} else {
+						if(pickerRef.current.pickedId !== undefined) {
+							console.log('select')
+						}
+					}
+					if(instancedSphereStateRef.current?.instancedSphere && instancedSphereStateRef.current.instancedSphere.instanceColor) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true;
 				})
 			}
 		}, 0)

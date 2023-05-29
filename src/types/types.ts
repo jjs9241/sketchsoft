@@ -16,4 +16,6 @@ export interface InstancedSphereState {
 export interface Picker {
 	rayCaster: THREE.Raycaster
 	mouse: THREE.Vector2
+	pickedId: number | undefined
+	selectedId: number | undefined
 }
