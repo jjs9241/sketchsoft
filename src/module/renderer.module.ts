@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 const dummy = new THREE.Object3D();
 const color = new THREE.Color();
 
-const getDummyMatrix = (scale: number, position: [number, number, number]) => {
+export const getDummyMatrix = (scale: number, position: [number, number, number]) => {
 	dummy.scale.x = scale
 	dummy.scale.y = scale
 	dummy.scale.z = scale

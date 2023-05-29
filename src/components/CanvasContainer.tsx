@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { useRef, useEffect, useState } from "react"
-import { drawSphere, issueSphereIndex, createRandomSphere, initRenderer, addDirectionalLight, addAmbientLight, initInstancedSphere } from "../module/renderer.module"
+import { drawSphere, issueSphereIndex, createRandomSphere, initRenderer, addDirectionalLight, addAmbientLight, initInstancedSphere, getDummyMatrix } from "../module/renderer.module"
 import { InstancedSphereState, Sphere, Picker } from "../types/types"
 
 //import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -123,6 +123,10 @@ const CanvasContainer = () => {
 					if(pickerRef.current.selectedId !== undefined && sphereContextRef.current !== null){
 						if(pickerRef.current.pickedId === pickerRef.current.selectedId){
 							console.log('delete')
+							const matrix = getDummyMatrix(0, [0,0,0])
+							instancedSphereStateRef.current?.instancedSphere.setMatrixAt(pickerRef.current.selectedId, matrix)
+							instancedSphereStateRef.current?.issuedIndexSet.add(pickerRef.current.selectedId)
+							if(instancedSphereStateRef.current)instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true;
 						}
 						else {
 							console.log('deselect')
@@ -131,11 +135,15 @@ const CanvasContainer = () => {
 							pickerRef.current.selectedId = undefined
 							if(pickerRef.current.pickedId !== undefined) {
 								console.log('select')
+								instancedSphereStateRef.current?.instancedSphere.setColorAt( pickerRef.current.pickedId, new THREE.Color(0xFF0000) )
+								pickerRef.current.selectedId = pickerRef.current.pickedId
 							}
 						}
 					} else {
 						if(pickerRef.current.pickedId !== undefined) {
 							console.log('select')
+							instancedSphereStateRef.current?.instancedSphere.setColorAt( pickerRef.current.pickedId, new THREE.Color(0xFF0000) )
+							pickerRef.current.selectedId = pickerRef.current.pickedId
 						}
 					}
 					if(instancedSphereStateRef.current?.instancedSphere && instancedSphereStateRef.current.instancedSphere.instanceColor) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true;
