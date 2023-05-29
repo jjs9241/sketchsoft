@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { getRandomNumber } from './calculator.module';
-import { InstancedSphereState, Sphere } from '../types/geometry';
+import { InstancedSphereState, Sphere } from '../types/types';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const dummy = new THREE.Object3D();
 const color = new THREE.Color();
@@ -20,14 +21,18 @@ export const initRenderer = () => {
 	const camera = new THREE.PerspectiveCamera( 35, 1, 0.1, 600 );
 	camera.position.z = 500;
 	camera.lookAt(0,0,0)
+	camera.updateProjectionMatrix()
 
 	const scene = new THREE.Scene();
 
 	const renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setClearColor( 0xffffff, 0);
 	//renderer.setSize( window.innerWidth, window.innerHeight );
 
-	return { camera, renderer, scene }
+	const controls = new OrbitControls( camera, renderer.domElement )
+
+	return { camera, renderer, scene, controls }
 }
 
 export const addBox = (scene: THREE.Scene) => {
@@ -49,12 +54,21 @@ const invisibleRadius = 0.0001
 
 export const initInstancedSphere = (scene: THREE.Scene): InstancedSphereState => {
 	const geometry = new THREE.SphereGeometry( invisibleRadius, 32, 16 ); 
-	const material = new THREE.MeshPhongMaterial( ); 
+	const material = new THREE.MeshPhongMaterial({ color: 0xffffff } ); 
 	
 	const maxCount = 10000
 	const instancedSphere = new THREE.InstancedMesh( geometry, material, maxCount );
-	instancedSphere.setColorAt(0, new THREE.Color());
+
+	const indexSet = new Set<number>()
+	const matrix = getDummyMatrix(0, [0,0,0])
+	for(let i = 0; i < maxCount; i++) {
+		instancedSphere.setMatrixAt(i, matrix)
+		color.setHex(0xffffff)
+		instancedSphere.setColorAt(i, color)
+		indexSet.add(i)
+	}
 	instancedSphere.instanceMatrix.needsUpdate = true;
+	if(instancedSphere.instanceColor !== null) instancedSphere.instanceColor.needsUpdate = true
 	
 	scene.add(instancedSphere)
 	return { instancedSphere, issuedIndexSet: new Set<number>(), maxCount: maxCount, count: 0 }
@@ -108,7 +122,7 @@ export const addSpotLight = (scene: THREE.Scene) => {
 }
 
 export const addDirectionalLight = (scene: THREE.Scene) => {
-	const intensity = 10;
+	const intensity = 8;
 	const light = new THREE.DirectionalLight( 0xffffff, intensity);
 	light.position.set(-200, 200, 200 );
 	scene.add(light)

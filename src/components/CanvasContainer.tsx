@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { useRef, useEffect, useState } from "react"
 import { drawSphere, issueSphereIndex, createRandomSphere, initRenderer, addDirectionalLight, addAmbientLight, initInstancedSphere } from "../module/renderer.module"
-import { InstancedSphereState, Sphere } from "../types/geometry"
+import { InstancedSphereState, Sphere, Picker } from "../types/types"
 
 //import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -13,16 +13,23 @@ const CanvasContainer = () => {
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     scene: THREE.Scene;
+		controls: OrbitControls
 	} | null>(null)
 	
 	const canvasContainerRef = useRef<HTMLDivElement | null>(null)
 	const instancedSphereStateRef = useRef<InstancedSphereState | null>(null)
 	const sphereContextRef = useRef<Sphere[] | null>(null)
+	const pickerRef = useRef<Picker | null>(null)
 	
 	const storeSphere = (sphere: Sphere) => {
 		if(sphereContextRef.current === null) return undefined
 		if(sphereContextRef.current !== null && sphereContextRef.current.find(sphere0 => sphere0.key === sphere.key) !== undefined) return
 		if(sphereContextRef.current !== null) sphereContextRef.current.push(sphere)
+		if(instancedSphereStateRef.current !== null){
+			drawSphere(instancedSphereStateRef.current, sphere)
+			instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true
+			instancedSphereStateRef.current.instancedSphere.computeBoundingSphere()
+		}
 	}
 
 	const animation = (time1: number) => {
@@ -30,17 +37,16 @@ const CanvasContainer = () => {
 		if(rendererStateRef.current !== null){
 			const rendererState = rendererStateRef.current
 
-			if(sphereContextRef.current !== null && instancedSphereStateRef.current !== null){
-				for(const sphere of sphereContextRef.current){
-					console.log(sphere.key)
-					drawSphere(instancedSphereStateRef.current, sphere)
-				}
-				instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true
-				//if(instancedSphereStateRef.current.instancedSphere.instanceColor !== null) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true
-			}
+			rendererState.controls.update()
+
+			pickerRef.current?.rayCaster.setFromCamera( pickerRef.current.mouse, rendererState.camera )
+			const intersection = instancedSphereStateRef.current?.instancedSphere === undefined ? undefined : pickerRef.current?.rayCaster.intersectObject( instancedSphereStateRef.current.instancedSphere )
+
+			console.log('intersection:::', intersection?.length, pickerRef.current?.mouse, rendererState.camera)
 
 			rendererState.renderer.render(rendererState.scene, rendererState.camera)
 		}
+		// console.log('picker:::', pickerRef.current?.mouse)
 	}
 
 	const onClickAdd = () => {
@@ -49,9 +55,7 @@ const CanvasContainer = () => {
 			if(issueSphereIndex(instancedSphereStateRef.current)){
 				const index = instancedSphereStateRef.current.issuedIndexSet.values().next().value as number
 				const newSphere = {...sphere, index: index}
-				//drawSphere(instancedSphereStateRef.current, newSphere)
 				instancedSphereStateRef.current.issuedIndexSet.delete(index)
-				//rendererStateRef.current.scene.add(instancedSphereStateRef.current.instancedSphere)
 				storeSphere(newSphere)
 			}
 		}
@@ -60,31 +64,50 @@ const CanvasContainer = () => {
 	useEffect(() => {
 		setTimeout(() => {
 			// const rect = rendererRef.current?.getBoundingClientRect()
-			if(rendererStateRef.current === null) rendererStateRef.current = initRenderer()
-			if(rendererStateRef.current !== null) animation(1)
-			if(instancedSphereStateRef.current === null) instancedSphereStateRef.current = initInstancedSphere(rendererStateRef.current.scene)
-			if(sphereContextRef.current === null) sphereContextRef.current = []
-			
-			rendererStateRef.current.renderer.setSize(503, 503)
-			rendererStateRef.current.camera.aspect = 1;
-			rendererStateRef.current.renderer.domElement.style.borderStyle = "solid"
-			rendererStateRef.current.renderer.domElement.style.borderColor = "red"
+			if(rendererStateRef.current === null) {
+				rendererStateRef.current = initRenderer()
+				if(rendererStateRef.current !== null) animation(1)
+				if(instancedSphereStateRef.current === null) instancedSphereStateRef.current = initInstancedSphere(rendererStateRef.current.scene)
+				if(sphereContextRef.current === null) sphereContextRef.current = []
+				
+				rendererStateRef.current.renderer.setSize(503, 503)
+				rendererStateRef.current.camera.aspect = 1;
+				rendererStateRef.current.renderer.domElement.style.borderStyle = "solid"
+				rendererStateRef.current.renderer.domElement.style.borderColor = "red"
 
-			const controls = new OrbitControls( rendererStateRef.current.camera, rendererStateRef.current.renderer.domElement );
-			controls.enableDamping = true;
-			controls.enableZoom = true;
-			controls.enablePan = false;
-			controls.maxDistance = 500
-			controls.minDistance = -100
+				rendererStateRef.current.controls.enableDamping = true;
+				rendererStateRef.current.controls.enableZoom = true;
+				rendererStateRef.current.controls.enablePan = false;
+				rendererStateRef.current.controls.maxDistance = 500
+				rendererStateRef.current.controls.minDistance = -100
+				
+				// const stats = new Stats()
+				// canvasContainerRef.current!.appendChild( stats.dom )
+				
+				canvasContainerRef.current!.appendChild(rendererStateRef.current.renderer.domElement)
+				
+				// scene.add(new THREE.AxesHelper(20))
+				addAmbientLight(rendererStateRef.current.scene)
+				addDirectionalLight(rendererStateRef.current.scene)
+
+				pickerRef.current = {
+					rayCaster: new THREE.Raycaster(),
+					mouse: new THREE.Vector2( 1, 1 )
+				}
+
+				canvasContainerRef.current?.addEventListener('mousemove', ( event ) =>  {
+
+					event.preventDefault();
 			
-			//const stats = new Stats();
-			//canvasContainerRef.current!.appendChild( stats.dom );
+					if(canvasContainerRef.current === null) return;
+					const rect = canvasContainerRef.current.getBoundingClientRect();
+					if(pickerRef.current !== null){
+						pickerRef.current.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+						pickerRef.current.mouse.y = ((rect.bottom - event.clientY) / rect.height ) * 2 - 1
+					}
 			
-			canvasContainerRef.current!.appendChild(rendererStateRef.current.renderer.domElement)
-			
-			// scene.add(new THREE.AxesHelper(20))
-			addAmbientLight(rendererStateRef.current.scene)
-			addDirectionalLight(rendererStateRef.current.scene)
+				})
+			}
 		}, 0)
 	}, [])
 

@@ -12,3 +12,8 @@ export interface InstancedSphereState {
 	maxCount: number
 	count: number
 }
+
+export interface Picker {
+	rayCaster: THREE.Raycaster
+	mouse: THREE.Vector2
+}
