@@ -1,7 +1,10 @@
 import * as THREE from "three"
 import { useRef, useEffect, useState } from "react"
-import { addRandomSphere, initRenderer, addDirectionalLight, addAmbientLight } from "../module/renderer.module"
-import { Sphere } from "../types/geometry"
+import { drawSphere, issueSphereIndex, createRandomSphere, initRenderer, addDirectionalLight, addAmbientLight, initInstancedSphere } from "../module/renderer.module"
+import { InstancedSphereState, Sphere } from "../types/geometry"
+
+//import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const CanvasContainer = () => {
 	console.log('CanvasContainer')
@@ -12,31 +15,72 @@ const CanvasContainer = () => {
     scene: THREE.Scene;
 	} | null>(null)
 	
-	const canvasContainerRef = useRef<HTMLDivElement>(null)
-
-	const [sphereStore, setSphereStore] = useState<Sphere[]>([])
+	const canvasContainerRef = useRef<HTMLDivElement | null>(null)
+	const instancedSphereStateRef = useRef<InstancedSphereState | null>(null)
+	const sphereContextRef = useRef<Sphere[] | null>(null)
 	
 	const storeSphere = (sphere: Sphere) => {
-		if(sphereStore.find(sphere0 => sphere0.key === sphere.key) !== undefined) return
-		setSphereStore([...sphereStore, sphere])
+		if(sphereContextRef.current === null) return undefined
+		if(sphereContextRef.current !== null && sphereContextRef.current.find(sphere0 => sphere0.key === sphere.key) !== undefined) return
+		if(sphereContextRef.current !== null) sphereContextRef.current.push(sphere)
+	}
+
+	const animation = (time1: number) => {
+		requestAnimationFrame( animation )
+		if(rendererStateRef.current !== null){
+			const rendererState = rendererStateRef.current
+
+			if(sphereContextRef.current !== null && instancedSphereStateRef.current !== null){
+				for(const sphere of sphereContextRef.current){
+					console.log(sphere.key)
+					drawSphere(instancedSphereStateRef.current, sphere)
+				}
+				instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true
+				//if(instancedSphereStateRef.current.instancedSphere.instanceColor !== null) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true
+			}
+
+			rendererState.renderer.render(rendererState.scene, rendererState.camera)
+		}
 	}
 
 	const onClickAdd = () => {
-		if(rendererStateRef.current !== null) addRandomSphere(rendererStateRef.current.scene, storeSphere)
+		if(rendererStateRef.current !== null && instancedSphereStateRef.current !== null){
+			const sphere = createRandomSphere()
+			if(issueSphereIndex(instancedSphereStateRef.current)){
+				const index = instancedSphereStateRef.current.issuedIndexSet.values().next().value as number
+				const newSphere = {...sphere, index: index}
+				//drawSphere(instancedSphereStateRef.current, newSphere)
+				instancedSphereStateRef.current.issuedIndexSet.delete(index)
+				//rendererStateRef.current.scene.add(instancedSphereStateRef.current.instancedSphere)
+				storeSphere(newSphere)
+			}
+		}
 	}
 
 	useEffect(() => {
 		setTimeout(() => {
-			console.log('init canvas')
 			// const rect = rendererRef.current?.getBoundingClientRect()
 			if(rendererStateRef.current === null) rendererStateRef.current = initRenderer()
+			if(rendererStateRef.current !== null) animation(1)
+			if(instancedSphereStateRef.current === null) instancedSphereStateRef.current = initInstancedSphere(rendererStateRef.current.scene)
+			if(sphereContextRef.current === null) sphereContextRef.current = []
+			
 			rendererStateRef.current.renderer.setSize(503, 503)
 			rendererStateRef.current.camera.aspect = 1;
 			rendererStateRef.current.renderer.domElement.style.borderStyle = "solid"
 			rendererStateRef.current.renderer.domElement.style.borderColor = "red"
+
+			// const controls = new OrbitControls( rendererStateRef.current.camera, rendererStateRef.current.renderer.domElement );
+			// controls.enableDamping = true;
+			// controls.enableZoom = true;
+			// controls.enablePan = false;
+
+			//const stats = new Stats();
+			//canvasContainerRef.current!.appendChild( stats.dom );
+			
 			canvasContainerRef.current!.appendChild(rendererStateRef.current.renderer.domElement)
+			
 			// scene.add(new THREE.AxesHelper(20))
-			// addRandomSphere(scene, addSphere)
 			addAmbientLight(rendererStateRef.current.scene)
 			addDirectionalLight(rendererStateRef.current.scene)
 		}, 0)

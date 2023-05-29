@@ -1,6 +1,19 @@
 import * as THREE from 'three';
 import { getRandomNumber } from './calculator.module';
-import { Sphere } from '../types/geometry';
+import { InstancedSphereState, Sphere } from '../types/geometry';
+
+const dummy = new THREE.Object3D();
+const color = new THREE.Color();
+
+const getDummyMatrix = (scale: number, position: [number, number, number]) => {
+	dummy.scale.x = scale
+	dummy.scale.y = scale
+	dummy.scale.z = scale
+	
+	dummy.position.set(position[0], position[1], position[2])
+	dummy.updateMatrix()
+	return dummy.matrix
+}
 
 export const initRenderer = () => {
 	console.log('initRenderer')
@@ -13,13 +26,6 @@ export const initRenderer = () => {
 	const renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setClearColor( 0xffffff, 0);
 	//renderer.setSize( window.innerWidth, window.innerHeight );
-
-	function animation( time: number ) {
-
-		renderer.render( scene, camera );
-	
-	}
-	renderer.setAnimationLoop( animation );
 
 	return { camera, renderer, scene }
 }
@@ -34,27 +40,64 @@ export const addBox = (scene: THREE.Scene) => {
 
 export const addSphere = (scene: THREE.Scene) => {
 	const geometry = new THREE.SphereGeometry( 0.2, 32, 16 ); 
-	const material = new THREE.MeshPhongMaterial( { color: 0x00ff00 } ); 
+	const material = new THREE.MeshPhongMaterial( { color: 0xffffff } ); 
 	const sphere = new THREE.Mesh( geometry, material ); 
 	scene.add( sphere );
 }
 
-export const addRandomSphere = (scene: THREE.Scene, addSphere: (sphere0: Sphere) => void) => {
+const invisibleRadius = 0.0001
+
+export const initInstancedSphere = (scene: THREE.Scene): InstancedSphereState => {
+	const geometry = new THREE.SphereGeometry( invisibleRadius, 32, 16 ); 
+	const material = new THREE.MeshPhongMaterial( ); 
+	
+	const maxCount = 10000
+	const instancedSphere = new THREE.InstancedMesh( geometry, material, maxCount );
+	instancedSphere.setColorAt(0, new THREE.Color());
+	instancedSphere.instanceMatrix.needsUpdate = true;
+	
+	scene.add(instancedSphere)
+	return { instancedSphere, issuedIndexSet: new Set<number>(), maxCount: maxCount, count: 0 }
+}
+
+export const issueSphereIndex = (instancedSphere: InstancedSphereState): boolean => {
+	if(instancedSphere.issuedIndexSet.size === 0){
+		if(instancedSphere.count === instancedSphere.maxCount) {
+			return false
+		}
+		instancedSphere.issuedIndexSet.add(instancedSphere.count)
+		instancedSphere.count += 1
+	}
+	return true
+}
+
+export const createRandomSphere = (): Sphere => {
 	const radius = getRandomNumber(10, 30)
 	const [ x, y, z ] = [1, 1, 1].map(_ => getRandomNumber(-100, 100))
+	const color = Math.random() * 0xffffff
 	
-	const geometry = new THREE.SphereGeometry( radius, 32, 16 ); 
-	const material = new THREE.MeshPhongMaterial( { color: Math.round(Math.random() * 0xffffff) } ); 
-	
-	const sphere = new THREE.Mesh( geometry, material );
-	sphere.position.set(x, y, z)
-	
-	scene.add( sphere );
-	addSphere({
+	return {
 		key: (new Date()).getTime().toString(),
 		position: [x, y, z],
-		radius: radius
-	})
+		radius: radius,
+		color: color,
+		index: undefined
+	}
+}
+
+export const drawSphere = (instancedSphere: InstancedSphereState, sphere: Sphere) => {
+	const radius = sphere.radius
+	const [ x, y, z ] = [...sphere.position]
+	
+	const matrix = getDummyMatrix(radius / invisibleRadius, [x, y, z])
+
+	if(sphere.index !== undefined) {
+		instancedSphere.instancedSphere.setMatrixAt(sphere.index, matrix)
+		color.setHex(sphere.color)
+		instancedSphere.instancedSphere.setColorAt(sphere.index, color)
+		if(instancedSphere.instancedSphere.instanceColor !== null) instancedSphere.instancedSphere.instanceColor.needsUpdate = true
+	}
+	
 }
 
 export const addSpotLight = (scene: THREE.Scene) => {
