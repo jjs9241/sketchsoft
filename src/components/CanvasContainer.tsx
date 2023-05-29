@@ -70,10 +70,10 @@ const CanvasContainer = () => {
 			rendererStateRef.current.renderer.domElement.style.borderStyle = "solid"
 			rendererStateRef.current.renderer.domElement.style.borderColor = "red"
 
-			// const controls = new OrbitControls( rendererStateRef.current.camera, rendererStateRef.current.renderer.domElement );
-			// controls.enableDamping = true;
-			// controls.enableZoom = true;
-			// controls.enablePan = false;
+			const controls = new OrbitControls( rendererStateRef.current.camera, rendererStateRef.current.renderer.domElement );
+			controls.enableDamping = true;
+			controls.enableZoom = true;
+			controls.enablePan = false;
 
 			//const stats = new Stats();
 			//canvasContainerRef.current!.appendChild( stats.dom );
