@@ -74,7 +74,9 @@ const CanvasContainer = () => {
 			controls.enableDamping = true;
 			controls.enableZoom = true;
 			controls.enablePan = false;
-
+			controls.maxDistance = 500
+			controls.minDistance = -100
+			
 			//const stats = new Stats();
 			//canvasContainerRef.current!.appendChild( stats.dom );
 			

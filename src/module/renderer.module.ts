@@ -17,8 +17,8 @@ const getDummyMatrix = (scale: number, position: [number, number, number]) => {
 
 export const initRenderer = () => {
 	console.log('initRenderer')
-	const camera = new THREE.PerspectiveCamera( 35, 1, 200, 500 );
-	camera.position.z = 400;
+	const camera = new THREE.PerspectiveCamera( 35, 1, 0.1, 600 );
+	camera.position.z = 500;
 	camera.lookAt(0,0,0)
 
 	const scene = new THREE.Scene();
@@ -108,7 +108,7 @@ export const addSpotLight = (scene: THREE.Scene) => {
 }
 
 export const addDirectionalLight = (scene: THREE.Scene) => {
-	const intensity = 12;
+	const intensity = 10;
 	const light = new THREE.DirectionalLight( 0xffffff, intensity);
 	light.position.set(-200, 200, 200 );
 	scene.add(light)
