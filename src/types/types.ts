@@ -18,4 +18,5 @@ export interface Picker {
 	mouse: THREE.Vector2
 	pickedId: number | undefined
 	selectedId: number | undefined
+	rotateQueue: {key: string, index: number}[]
 }

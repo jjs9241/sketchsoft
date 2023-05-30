@@ -5,6 +5,18 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const dummy = new THREE.Object3D();
 const color = new THREE.Color();
+const vector3 = new THREE.Vector3();
+
+export const getNormalizeVector = (vector: [number, number, number]) => {
+	vector3.x = vector[0]
+	vector3.y = vector[1]
+	vector3.z = vector[2]
+	return vector3.normalize()
+}
+
+export const getDummyVector = () => {
+	return vector3
+}
 
 export const getDummyMatrix = (scale: number, position: [number, number, number]) => {
 	dummy.scale.x = scale
