@@ -58,6 +58,7 @@ export const initInstancedSphere = (scene: THREE.Scene): InstancedSphereState =>
 	
 	const maxCount = 10000
 	const instancedSphere = new THREE.InstancedMesh( geometry, material, maxCount );
+	instancedSphere.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
 
 	const indexSet = new Set<number>()
 	const matrix = getDummyMatrix(0, [0,0,0])

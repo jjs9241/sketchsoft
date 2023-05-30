@@ -119,14 +119,15 @@ const CanvasContainer = () => {
 
 					event.preventDefault();
 			
-					if(pickerRef.current === null || pickerRef.current.pickedId === undefined) return;
+					if(pickerRef.current === null) return;
+					
 					if(pickerRef.current.selectedId !== undefined && sphereContextRef.current !== null){
 						if(pickerRef.current.pickedId === pickerRef.current.selectedId){
 							console.log('delete')
 							const matrix = getDummyMatrix(0, [0,0,0])
 							instancedSphereStateRef.current?.instancedSphere.setMatrixAt(pickerRef.current.selectedId, matrix)
 							instancedSphereStateRef.current?.issuedIndexSet.add(pickerRef.current.selectedId)
-							if(instancedSphereStateRef.current)instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true;
+							if(instancedSphereStateRef.current) instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true;
 						}
 						else {
 							console.log('deselect')
@@ -138,15 +139,70 @@ const CanvasContainer = () => {
 								instancedSphereStateRef.current?.instancedSphere.setColorAt( pickerRef.current.pickedId, new THREE.Color(0xFF0000) )
 								pickerRef.current.selectedId = pickerRef.current.pickedId
 							}
+							if(instancedSphereStateRef.current !== null && instancedSphereStateRef.current.instancedSphere.instanceColor !== null) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true;
 						}
 					} else {
 						if(pickerRef.current.pickedId !== undefined) {
 							console.log('select')
 							instancedSphereStateRef.current?.instancedSphere.setColorAt( pickerRef.current.pickedId, new THREE.Color(0xFF0000) )
 							pickerRef.current.selectedId = pickerRef.current.pickedId
+							if(instancedSphereStateRef.current !== null && instancedSphereStateRef.current.instancedSphere.instanceColor !== null) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true;
 						}
 					}
-					if(instancedSphereStateRef.current?.instancedSphere && instancedSphereStateRef.current.instancedSphere.instanceColor) instancedSphereStateRef.current.instancedSphere.instanceColor.needsUpdate = true;
+					
+
+				})
+
+				window.addEventListener('keydown', ( event ) =>  {
+
+					event.preventDefault();
+			
+					console.log(event)
+					if(event.key === 'q' || event.key === 'Q' || event.key === 'w' || event.key === 'W' || event.key === 'a' || event.key === 'A' || event.key === 's' || event.key === 'S' || event.key === 'z' || event.key === 'Z' || event.key === 'x' || event.key === 'X'){
+						console.log('q')
+						if(pickerRef.current !== null && pickerRef.current.selectedId){
+
+							const selectedSphere = sphereContextRef.current?.find(sphere => sphere.index === pickerRef.current?.selectedId)
+							const selectedIndex = pickerRef.current?.selectedId
+							if(selectedSphere !== undefined && instancedSphereStateRef.current !== null && sphereContextRef.current !== null){
+								const addVector = [0, 0, 0] as [number, number, number]
+								const translateUnit = 0.1
+								if(event.key === 'q' || event.key === 'Q'){
+									addVector[0] += translateUnit
+								} else if( event.key === 'w' || event.key === 'W'){
+									addVector[0] -= translateUnit
+								} else if( event.key === 'a' || event.key === 'A'){
+									addVector[1] += translateUnit
+								} else if( event.key === 's' || event.key === 'S'){
+									addVector[1] -= translateUnit
+								} else if( event.key === 'z' || event.key === 'Z'){
+									addVector[2] += translateUnit
+								} else if( event.key === 'x' || event.key === 'X') {
+									addVector[2] -= translateUnit
+								}
+								
+								let matrix = new THREE.Matrix4();
+								let position = new THREE.Vector3();
+								instancedSphereStateRef.current?.instancedSphere.getMatrixAt( selectedIndex, matrix );
+								position.setFromMatrixPosition( matrix )
+								position.x += addVector[0]
+								position.y += addVector[1]
+								position.z += addVector[2]
+								matrix.setPosition( position )
+								instancedSphereStateRef.current.instancedSphere.setMatrixAt( selectedIndex, matrix );
+								instancedSphereStateRef.current.instancedSphere.instanceMatrix.needsUpdate = true;
+
+								const foundIndex = sphereContextRef.current.findIndex(sphere => sphere.key === selectedSphere.key)
+								if(foundIndex !== -1){
+									sphereContextRef.current[foundIndex] = {
+										...selectedSphere,
+										position: [position.x, position.x, position.x]
+									}
+								}
+							}
+						}
+					}
+
 				})
 			}
 		}, 0)
